@@ -292,7 +292,11 @@ function loadTextures() {
 
     // Wijs texturen toe aan de shader
     const uTextures = gl.getUniformLocation(program, "uTextures");
-    gl.uniform1i(uTextures, 0); // Texture unit 0
+    for (let i = 0; i < textures.length; i++) {
+        gl.activeTexture(gl.TEXTURE0 + i);
+        gl.bindTexture(gl.TEXTURE_2D, textures[i]);
+        gl.uniform1i(uTextures + `[${i}]`, i);
+    }
 }
 
 // Matrix Initialisatie
@@ -347,6 +351,7 @@ function initializeEvents() {
     window.addEventListener("keydown", function(event) {
         switch (event.key) {
             case "a": // Verhoog ambient
+                scoreElement.style.background = `rgba(0, 0, 0, 0.5)`;
                 gl.uniform1f(uAmbient, Math.min(1.0, gl.getUniform(program, uAmbient) + 0.05));
                 break;
             case "z": // Verlaag ambient
