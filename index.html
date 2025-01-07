@@ -108,8 +108,9 @@
         let lastTime = 0;
         let vao;
 
-        // Uniform Locations
-        let uProjection, uTranslation, uRotationX, uRotationY;
+        // Uniform Locations (Declared Globally)
+        let uProjection, uTranslation;
+        let uRotationX_loc, uRotationY_loc; // **Moved to Global Scope**
         let uLightPos, uAmbient, uDiffuse, uSpecular;
 
         // HTML Elements
@@ -297,6 +298,12 @@
             }
 
             glContext.useProgram(program);
+
+            // **Retrieve and Assign Uniform Locations Globally**
+            uProjection = glContext.getUniformLocation(program, "uProjection");
+            uTranslation = glContext.getUniformLocation(program, "uTranslation");
+            uRotationX_loc = glContext.getUniformLocation(program, "uRotationX"); // Moved to Global
+            uRotationY_loc = glContext.getUniformLocation(program, "uRotationY"); // Moved to Global
         }
 
         function compileShader(type, source) {
@@ -559,9 +566,7 @@
                 currentRotation.y += ROTATION_SPEED;
             }
 
-            // Update rotation uniforms
-            const uRotationX_loc = glContext.getUniformLocation(program, "uRotationX");
-            const uRotationY_loc = glContext.getUniformLocation(program, "uRotationY");
+            // Update rotation uniforms using global uniform locations
             glContext.uniform1f(uRotationX_loc, currentRotation.x);
             glContext.uniform1f(uRotationY_loc, currentRotation.y);
 
