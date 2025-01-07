@@ -101,16 +101,16 @@
         let canvas;
         let players = []; // Array of players
         let activePlayerIndex = 0; // Index of the active player
-        let isRolling = false;
-        let targetRotation = { x: 0, y: 0 };
-        let currentRotation = { x: 0, y: 0 };
-        let textures = [];
-        let lastTime = 0;
-        let vao;
+        let isRolling = false; // Flag to indicate if the die is currently rolling
+        let targetRotation = { x: 0, y: 0 }; // Target rotation angles
+        let currentRotation = { x: 0, y: 0 }; // Current rotation angles
+        let textures = []; // Array to hold texture objects
+        let lastTime = 0; // Timestamp of the last frame
+        let vao; // Vertex Array Object
 
         // Uniform Locations (Declared Globally)
         let uProjection, uTranslation;
-        let uRotationX_loc, uRotationY_loc; // **Moved to Global Scope**
+        let uRotationX_loc, uRotationY_loc; // Rotation uniform locations
         let uLightPos, uAmbient, uDiffuse, uSpecular;
 
         // HTML Elements
@@ -125,7 +125,7 @@
             li.id = `player-${player.name}`;
             li.textContent = `${player.name}: ${player.score}`;
 
-            // Add reset button
+            // Add reset button for the player
             const resetButton = document.createElement("button");
             resetButton.textContent = "Reset";
             resetButton.onclick = function() {
@@ -137,7 +137,7 @@
             playersList.appendChild(li);
         }
 
-        // Highlight the active player
+        // Highlight the active player in the scoreboard
         function highlightActivePlayer() {
             // Remove highlight from all players
             playersList.querySelectorAll('li').forEach(li => {
@@ -164,8 +164,8 @@
                 return;
             }
 
-            glContext.enable(glContext.DEPTH_TEST);
-            glContext.clearColor(0.1, 0.1, 0.1, 1.0);
+            glContext.enable(glContext.DEPTH_TEST); // Enable depth testing for 3D rendering
+            glContext.clearColor(0.1, 0.1, 0.1, 1.0); // Set clear color
 
             initializeShaders();
             initializeBuffers();
@@ -174,10 +174,12 @@
             initializeLighting();
             initializeEvents();
 
-            requestAnimationFrame(render);
+            requestAnimationFrame(render); // Start the render loop
         };
 
-        // Shader Initialization
+        // Shader Initialization:
+        // - Vertex Shader: Calculates positions, rotations, and normals of the object
+        // - Fragment Shader: Calculates colors and lighting effects, including diffuse and specular components
         function initializeShaders() {
             const vsSource = `#version 300 es
             in vec3 aPos;
@@ -299,13 +301,14 @@
 
             glContext.useProgram(program);
 
-            // **Retrieve and Assign Uniform Locations Globally**
+            // Retrieve and assign uniform locations globally
             uProjection = glContext.getUniformLocation(program, "uProjection");
             uTranslation = glContext.getUniformLocation(program, "uTranslation");
-            uRotationX_loc = glContext.getUniformLocation(program, "uRotationX"); // Moved to Global
-            uRotationY_loc = glContext.getUniformLocation(program, "uRotationY"); // Moved to Global
+            uRotationX_loc = glContext.getUniformLocation(program, "uRotationX"); // Rotation around X-axis
+            uRotationY_loc = glContext.getUniformLocation(program, "uRotationY"); // Rotation around Y-axis
         }
 
+        // Compiles a shader of the given type with the provided source
         function compileShader(type, source) {
             const shader = glContext.createShader(type);
             glContext.shaderSource(shader, source);
@@ -400,7 +403,7 @@
             glContext.vertexAttribPointer(aFaceID, 1, glContext.FLOAT, false, 36, 32); // 1 float *4 = 32
         }
 
-        // Load Textures
+        // Load Textures for each die face
         function loadTextures() {
             const textureUnits = ["uTexture1", "uTexture2", "uTexture3", "uTexture4", "uTexture5", "uTexture6"];
 
@@ -408,7 +411,7 @@
                 const texture = glContext.createTexture();
                 glContext.bindTexture(glContext.TEXTURE_2D, texture);
 
-                // Placeholder 1x1 pixel (white)
+                // Placeholder 1x1 pixel (white) while the actual texture loads
                 const level = 0;
                 const internalFormat = glContext.RGBA;
                 const width = 1;
@@ -431,7 +434,7 @@
                     console.error(`Error loading texture ${i + 1}`);
                 };
 
-                // Texture parameters
+                // Texture parameters for wrapping and filtering
                 glContext.texParameteri(glContext.TEXTURE_2D, glContext.TEXTURE_WRAP_S, glContext.CLAMP_TO_EDGE);
                 glContext.texParameteri(glContext.TEXTURE_2D, glContext.TEXTURE_WRAP_T, glContext.CLAMP_TO_EDGE);
                 glContext.texParameteri(glContext.TEXTURE_2D, glContext.TEXTURE_MIN_FILTER, glContext.LINEAR_MIPMAP_LINEAR);
@@ -445,20 +448,20 @@
             }
         }
 
-        // Matrix Initialization
+        // Matrix Initialization for projection and translation
         function initializeMatrices() {
             // Projection matrix (perspective)
             uProjection = glContext.getUniformLocation(program, "uProjection");
-            const fov = 45 * Math.PI / 180; // 45 degrees
+            const fov = 45 * Math.PI / 180; // 45 degrees in radians
             const aspect = glContext.canvas.clientWidth / glContext.canvas.clientHeight;
             const zNear = 0.1;
             const zFar = 100.0;
             const projectionMatrix = perspective(fov, aspect, zNear, zFar);
             glContext.uniformMatrix4fv(uProjection, false, projectionMatrix);
 
-            // Translation matrix
+            // Translation matrix to position the die within the view
             uTranslation = glContext.getUniformLocation(program, "uTranslation");
-            const translationMatrix = translate(0, 0, -6);
+            const translationMatrix = translate(0, 0, -6); // Move the die 6 units into the screen
             glContext.uniformMatrix4fv(uTranslation, false, translationMatrix);
         }
 
@@ -469,14 +472,14 @@
             uDiffuse = glContext.getUniformLocation(program, "uDiffuse");
             uSpecular = glContext.getUniformLocation(program, "uSpecular");
 
-            // Initial values
-            glContext.uniform3fv(uLightPos, [5.0, 5.0, 5.0]);
-            glContext.uniform1f(uAmbient, 0.3);
-            glContext.uniform1f(uDiffuse, 0.7);
-            glContext.uniform1f(uSpecular, 1.0);
+            // Initial lighting values
+            glContext.uniform3fv(uLightPos, [5.0, 5.0, 5.0]); // Position of the light source
+            glContext.uniform1f(uAmbient, 0.3); // Ambient lighting intensity
+            glContext.uniform1f(uDiffuse, 0.7); // Diffuse lighting intensity
+            glContext.uniform1f(uSpecular, 1.0); // Specular lighting intensity
         }
 
-        // Event Initialization
+        // Event Initialization for user interactions
         function initializeEvents() {
             // Spacebar to roll the die
             window.addEventListener("keydown", function(event) {
@@ -485,15 +488,15 @@
                 }
             });
 
-            // Mouse move to adjust the light position
+            // Mouse move to adjust the light position dynamically
             canvas.addEventListener("mousemove", function(event) {
                 const rect = canvas.getBoundingClientRect();
-                const x = ((event.clientX - rect.left) / canvas.width) * 10 - 5; // From -5 to +5
-                const y = ((event.clientY - rect.top) / canvas.height) * 10 - 5; // From -5 to +5
-                glContext.uniform3fv(uLightPos, [x, y, 5.0]);
+                const x = ((event.clientX - rect.left) / canvas.width) * 10 - 5; // Map to range [-5, +5]
+                const y = ((event.clientY - rect.top) / canvas.height) * 10 - 5; // Map to range [-5, +5]
+                glContext.uniform3fv(uLightPos, [x, y, 5.0]); // Update light position
             });
 
-            // Keyboard controls for lighting
+            // Keyboard controls for adjusting lighting parameters
             window.addEventListener("keydown", function(event) {
                 let ambient = glContext.getUniform(program, uAmbient);
                 let diffuse = glContext.getUniform(program, uDiffuse);
@@ -527,7 +530,7 @@
                 }
             });
 
-            // Form to add players
+            // Form submission to add new players
             playerForm.addEventListener("submit", function(event) {
                 event.preventDefault();
                 const playerNameInput = document.getElementById("playerName");
@@ -540,7 +543,7 @@
                     return;
                 }
 
-                // Add player
+                // Add new player to the list
                 const player = { name: name, score: 0 };
                 players.push(player);
                 addPlayerToList(player);
@@ -553,12 +556,12 @@
             });
         }
 
-        // Render Function
+        // Render Function: Called every frame to render the scene
         function render(currentTime) {
             const deltaTime = currentTime - lastTime;
             lastTime = currentTime;
 
-            glContext.clear(glContext.COLOR_BUFFER_BIT | glContext.DEPTH_BUFFER_BIT);
+            glContext.clear(glContext.COLOR_BUFFER_BIT | glContext.DEPTH_BUFFER_BIT); // Clear the canvas
 
             // Automatic rotation if not rolling
             if (!isRolling) {
@@ -570,7 +573,7 @@
             glContext.uniform1f(uRotationX_loc, currentRotation.x);
             glContext.uniform1f(uRotationY_loc, currentRotation.y);
 
-            // Bind textures
+            // Bind all textures before drawing
             for (let i = 0; i < textures.length; i++) {
                 glContext.activeTexture(glContext.TEXTURE0 + i);
                 glContext.bindTexture(glContext.TEXTURE_2D, textures[i]);
@@ -580,19 +583,19 @@
             glContext.bindVertexArray(vao);
             glContext.drawArrays(glContext.TRIANGLES, 0, 36);
 
-            requestAnimationFrame(render);
+            requestAnimationFrame(render); // Continue the render loop
         }
 
-        // Die Rolling Function
+        // Die Rolling Function: Handles the animation and score updating when the die is rolled
         function rollDie() {
             if (players.length === 0) {
-                alert("Voeg eerst een speler toe!");
+                alert("Voeg eerst een speler toe!"); // Alert if no players are present
                 return;
             }
 
             isRolling = true;
 
-            // Generate a random number between 1 and 6
+            // Generate a random number between 1 and 6 to simulate die roll
             const randomNumber = Math.floor(Math.random() * 6) + 1;
             console.log(`Rolresultaat: ${randomNumber}`);
 
@@ -604,7 +607,7 @@
                 playerLi.firstChild.textContent = `${activePlayer.name}: ${activePlayer.score}`;
             }
 
-            // Define target rotations for each face
+            // Define target rotations for each face to align the correct face upwards
             const rotations = {
                 1: { x: 0,               y: 0 },               // Front
                 2: { x: 0,               y: Math.PI },       // Back
@@ -616,13 +619,13 @@
 
             const target = rotations[randomNumber];
 
-            // Add extra rotations for realism
+            // Add extra rotations for realism, making the die spin multiple times before stopping
             const extraRotations = Math.floor(Math.random() * 4) + 2; // 2 to 5 extra rotations
             targetRotation.x = target.x + (extraRotations * 2 * Math.PI);
             targetRotation.y = target.y + (extraRotations * 2 * Math.PI);
 
             // Animation parameters
-            const duration = 2000; // 2 seconds
+            const duration = 2000; // 2 seconds for the roll animation
             const startRotation = { ...currentRotation };
             const deltaRotation = { 
                 x: targetRotation.x - startRotation.x,
@@ -630,23 +633,26 @@
             };
             const startTime = performance.now();
 
-            // Easing function (easeOutCubic)
+            // Easing function (easeOutCubic) for smooth deceleration
             function easeOutCubic(t) {
                 return 1 - Math.pow(1 - t, 3);
             }
 
-            // Animation function with easing
+            // Animation function with easing applied
             function animate(time) {
                 const elapsed = time - startTime;
-                const t = Math.min(elapsed / duration, 1);
+                const t = Math.min(elapsed / duration, 1); // Clamp t to [0,1]
                 const easedT = easeOutCubic(t);
 
+                // Update current rotation based on easing
                 currentRotation.x = startRotation.x + deltaRotation.x * easedT;
                 currentRotation.y = startRotation.y + deltaRotation.y * easedT;
 
+                // Update rotation uniforms
                 glContext.uniform1f(uRotationX_loc, currentRotation.x);
                 glContext.uniform1f(uRotationY_loc, currentRotation.y);
 
+                // Clear and redraw the scene with updated rotation
                 glContext.clear(glContext.COLOR_BUFFER_BIT | glContext.DEPTH_BUFFER_BIT);
                 for (let i = 0; i < textures.length; i++) {
                     glContext.activeTexture(glContext.TEXTURE0 + i);
@@ -656,9 +662,9 @@
                 glContext.drawArrays(glContext.TRIANGLES, 0, 36);
 
                 if (t < 1) {
-                    requestAnimationFrame(animate);
+                    requestAnimationFrame(animate); // Continue animation
                 } else {
-                    // Snap to the exact target rotation to ensure accuracy
+                    // Snap to the exact target rotation to ensure the correct face is up
                     currentRotation.x = target.x + (extraRotations * 2 * Math.PI);
                     currentRotation.y = target.y + (extraRotations * 2 * Math.PI);
                     glContext.uniform1f(uRotationX_loc, currentRotation.x);
@@ -671,17 +677,26 @@
                     glContext.bindVertexArray(vao);
                     glContext.drawArrays(glContext.TRIANGLES, 0, 36);
 
-                    isRolling = false;
-                    // Switch to the next player
+                    isRolling = false; // Roll animation finished
+                    // Switch to the next player in the list
                     activePlayerIndex = (activePlayerIndex + 1) % players.length;
                     highlightActivePlayer();
                 }
             }
 
-            requestAnimationFrame(animate);
+            requestAnimationFrame(animate); // Start the roll animation
         }
 
         // Matrix Helper Functions
+
+        /**
+         * Creates a perspective projection matrix.
+         * @param {number} fov - Field of view in radians.
+         * @param {number} aspect - Aspect ratio.
+         * @param {number} near - Near clipping plane.
+         * @param {number} far - Far clipping plane.
+         * @returns {Float32Array} - The perspective projection matrix.
+         */
         function perspective(fov, aspect, near, far) {
             const f = 1.0 / Math.tan(fov / 2);
             const nf = 1 / (near - far);
@@ -705,6 +720,13 @@
             return out;
         }
 
+        /**
+         * Creates a translation matrix.
+         * @param {number} x - Translation along the X-axis.
+         * @param {number} y - Translation along the Y-axis.
+         * @param {number} z - Translation along the Z-axis.
+         * @returns {Float32Array} - The translation matrix.
+         */
         function translate(x, y, z) {
             const out = new Float32Array(16);
             out[0] = 1;
