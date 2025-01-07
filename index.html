@@ -431,7 +431,7 @@
 
             // Translation matrix
             uTranslation = glContext.getUniformLocation(program, "uTranslation");
-            const translationMatrix = translate(0, -1, -6); // Plaats de dobbelsteen op de grond
+            const translationMatrix = translate(0, 0, -6);
             glContext.uniformMatrix4fv(uTranslation, false, translationMatrix);
         }
 
@@ -536,6 +536,8 @@
             }
 
             // Update rotatie uniformen
+            const uRotationX = glContext.getUniformLocation(program, "uRotationX");
+            const uRotationY = glContext.getUniformLocation(program, "uRotationY");
             glContext.uniform1f(uRotationX, currentRotation.x);
             glContext.uniform1f(uRotationY, currentRotation.y);
 
@@ -573,22 +575,22 @@
                 playerLi.firstChild.textContent = `${activePlayer.name}: ${activePlayer.score}`;
             }
 
-            // Bepaal de eindrotatie zodat de juiste zijde naar boven komt
-            const rotations = {
-                1: { x: 0, y: 0 },
-                2: { x: 0, y: Math.PI },
-                3: { x: 0, y: -Math.PI / 2 },
-                4: { x: 0, y: Math.PI / 2 },
-                5: { x: -Math.PI / 2, y: 0 },
-                6: { x: Math.PI / 2, y: 0 }
-            };
+// Deze mapping zorgt ervoor dat als randomNumber = 1, dan face #1 echt voor de camera eindigt, enz.
+const rotations = {
+  1: { x: 0,             y: 0             },
+  2: { x: 0,             y: Math.PI       },   // Naar achteren
+  3: { x: 0,             y: -Math.PI / 2  },   // Rechts
+  4: { x: 0,             y:  Math.PI / 2  },   // Links
+  5: { x: -Math.PI / 2,  y: 0             },   // Boven
+  6: { x:  Math.PI / 2,  y: 0             }    // Onder
+};
+
 
             const target = rotations[randomNumber];
             // Voeg extra rotaties toe voor realisme
-            const extraRotationsX = Math.floor(Math.random() * 3) + 2; // 2 tot 4 extra rotaties rond X
-            const extraRotationsY = Math.floor(Math.random() * 3) + 2; // 2 tot 4 extra rotaties rond Y
-            targetRotation.x = currentRotation.x + target.x + (extraRotationsX * 2 * Math.PI);
-            targetRotation.y = currentRotation.y + target.y + (extraRotationsY * 2 * Math.PI);
+            const extraRotations = Math.floor(Math.random() * 4) + 2; // 2 tot 5 extra rotaties
+            targetRotation.x = currentRotation.x + target.x + (extraRotations * 2 * Math.PI);
+            targetRotation.y = currentRotation.y + target.y + (extraRotations * 2 * Math.PI);
 
             // Animatie parameters
             const duration = 2000; // 2 seconden
@@ -631,9 +633,6 @@
                     // Wissel naar de volgende speler
                     activePlayerIndex = (activePlayerIndex + 1) % players.length;
                     highlightActivePlayer();
-                    // Stel de huidige rotatie in op de exacte eindrotatie om eventuele afrondingsfouten te corrigeren
-                    currentRotation.x = startRotation.x + deltaRotation.x;
-                    currentRotation.y = startRotation.y + deltaRotation.y;
                 }
             }
 
