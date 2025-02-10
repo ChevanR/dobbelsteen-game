@@ -2,9 +2,17 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>WebGL Interactieve Dobbelsteen</title>
+    <title>WebGL Interactive Dice</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #222; color: white; font-family: Arial, sans-serif; }
+        /* Remove margins and set basic styles */
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background-color: #222; 
+            color: white; 
+            font-family: Arial, sans-serif; 
+        }
+        /* Style for the scoreboard */
         #scoreboard {
             position: absolute;
             top: 20px;
@@ -16,29 +24,35 @@
             overflow-y: auto;
             max-height: 90vh;
         }
+        /* Title of the scoreboard */
         #scoreboard h2 {
             margin-top: 0;
         }
+        /* Remove list styles */
         #scoreboard ul {
             list-style: none;
             padding: 0;
         }
+        /* Style for each player in the list */
         #scoreboard li {
             margin-bottom: 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
+        /* Style for buttons in the scoreboard */
         #scoreboard button {
             margin-left: 10px;
             padding: 2px 5px;
             font-size: 12px;
             cursor: pointer;
         }
+        /* Style for the player form */
         #playerForm {
             margin-bottom: 20px;
             display: flex;
         }
+        /* Style for input fields in the form */
         #playerForm input {
             padding: 5px;
             font-size: 14px;
@@ -47,6 +61,7 @@
             border-radius: 4px;
             margin-right: 5px;
         }
+        /* Style for the submit button in the form */
         #playerForm button {
             padding: 5px 10px;
             font-size: 14px;
@@ -56,6 +71,7 @@
             color: white;
             cursor: pointer;
         }
+        /* Highlight the active player */
         #activePlayer {
             font-weight: bold;
             margin-top: 10px;
@@ -63,21 +79,30 @@
     </style>
 </head>
 <body>
+    <!-- Canvas where WebGL will draw the dice -->
     <canvas id="myCanvas" width="800" height="600"></canvas>
+
+    <!-- Scoreboard section -->
     <div id="scoreboard">
         <h2>Scoreboard</h2>
+        <!-- Form to add new players -->
         <form id="playerForm">
             <input type="text" id="playerName" placeholder="Enter player name" required />
             <button type="submit">Add</button>
         </form>
+        <!-- List of players and their scores -->
         <ul id="playersList">
-            <!-- Players will be added here -->
+            <!-- Players will be added here dynamically -->
         </ul>
+        <!-- Shows the active player -->
         <div id="activePlayer">Active Player: None</div>
     </div>
+
     <script type="text/javascript">
-        // Constants
-        const ROTATION_SPEED = 0.005; // Base rotation speed
+        /*******************************
+         * Constants
+         *******************************/
+        const ROTATION_SPEED = 0.005; // Base rotation speed for the dice
 
         // Base64 Textures for each face of the die
         const textureData = [
@@ -95,49 +120,61 @@
             "data:image/png;base64,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cRkwYIBTsAkWAhCAAAT8InDixAn5xje+4VxSzsrfkG5ra3MOOAFDAAIQgIA/BK64wmjUveG0/A3uAwcOyHe/+133yBMxBCAAAQg4S+B3v/udDBs2zNn4nZe/If/Tn/5UfvzjHzu7CAQOAQhAAALuEHj88cflJz/5iTsBdxCpF/I3eXEHQKfrkOAhAAEIOEHA5jv1dQagN/I3SZuLKzz77LPSq1evzjBgWwhAAAIQgMBlCbS0tMg999wTXGzOh+GV/M2CZGZmymOPPcalgH2oTnKAAAQgYAEBc8neBQsWSGNjowXRJCcE7+TfjsXcDOiBBx7gboDJqROOAgEIQEAdAXN3vvXr11t/k55EFsZb+bfDuOuuu4InAbm5uYnwYR8IQAACEFBGoKamJpD+Cy+84G3m3su/feXMCYHmSUBWVpa3i0liEIAABCCQOIGGhoZA+hs3bkz8II7sqUb+7esxcuRIuf3228X8/uY3v+nIMhEmBCAAAQikgsBbb70le/bskddffz34rWWok/+nF/aWW26RoqKi4N7L5m8GBCAAAQj4T+DIkSNSWVkpO3fuFPO3xqFa/p9ecPP1QPMEID09Pfgx/21+2v82vxkQgAAEIGA/gebmZjFfzWv/3f63+W8je/Pf2gfy114B5A8BCEAAAuoIIH91S07CEIAABCCgnQDy114B5A8BCEAAAuoIIH91S07CEIAABCCgnQDy114B5A8BCEAAAuoIIH91S07CEIAABCCgnQDy114B5A8BCEAAAuoIIH91S07CEIAABCCgnQDy114B5A8BCEAAAuoIIH91S07CEIAABCCgnQDy114B5A8BCEAAAuoIIH91S07CEIAABCCgnQDy114B5A8BCEAAAuoIIH91S07CEIAABCCgnQDy114B5A8BCEAAAuoIIH91S07CEIAABCCgnQDy114B5A8BCEAAAuoIIH91S07CEIAABCCgnQDy114B5A8BCEAAAuoIIH91S07CEIAABCCgnQDy114B5A8BCEAAAuoIIH91S07CEIAABCCgnQDy114B5A8BCEAAAuoIIH91S07CEIAABCCgnQDy114B5A8BCEAAAuoIIH91S07CEIAABCCgnQDy114B5A8BCEAAAuoIIH91S07CEIAABCCgnQDy114B5A8BCEAAAuoIIH91S07CEIAABCCgnQDy114B5A8BCEAAAuoIIH91S07CEIAABCCgnQDy114B5A8BCEAAAuoIIH91S07CEIAABCCgnQDy114B5A8BCEAAAuoI/B/O9dJaa9ztawAAAABJRU5ErkJggg=="
         ];
 
-        // Global Variables
-        let glContext;
-        let program;
-        let canvas;
-        let players = []; // Array of players
+        /*******************************
+         * Global Variables
+         *******************************/
+        let glContext; // WebGL2 context
+        let program; // Shader program
+        let canvas; // Canvas element
+        let players = []; // Array to store players
         let activePlayerIndex = 0; // Index of the active player
-        let isRolling = false; // Flag to indicate if the die is currently rolling
+        let isRolling = false; // Is the die currently rolling
         let targetRotation = { x: 0, y: 0 }; // Target rotation angles
         let currentRotation = { x: 0, y: 0 }; // Current rotation angles
-        let textures = []; // Array to hold texture objects
-        let lastTime = 0; // Timestamp of the last frame
+        let textures = []; // Array to hold textures
+        let lastTime = 0; // Last frame time
         let vao; // Vertex Array Object
 
-        // Uniform Locations (Declared Globally)
+        /*******************************
+         * Uniform Locations
+         *******************************/
         let uProjection, uTranslation;
-        let uRotationX_loc, uRotationY_loc; // Rotation uniform locations
+        let uRotationX_loc, uRotationY_loc;
         let uLightPos, uAmbient, uDiffuse, uSpecular;
 
-        // HTML Elements
+        /*******************************
+         * HTML Elements
+         *******************************/
         const scoreboard = document.getElementById("scoreboard");
         const playerForm = document.getElementById("playerForm");
         const playersList = document.getElementById("playersList");
         const activePlayerDiv = document.getElementById("activePlayer");
 
-        // Add player to the UI list
+        /*******************************
+         * Function: addPlayerToList
+         * Adds a new player to the scoreboard UI.
+         *******************************/
         function addPlayerToList(player) {
-            const li = document.createElement("li");
-            li.id = `player-${player.name}`;
-            li.textContent = `${player.name}: ${player.score}`;
+            const li = document.createElement("li"); // Create list item
+            li.id = `player-${player.name}`; // Set unique ID
+            li.textContent = `${player.name}: ${player.score}`; // Set text
 
-            // Add reset button for the player
+            // Create a reset button
             const resetButton = document.createElement("button");
-            resetButton.textContent = "Reset";
+            resetButton.textContent = "Reset"; // Button label
             resetButton.onclick = function() {
-                player.score = 0;
-                li.firstChild.textContent = `${player.name}: ${player.score}`;
+                player.score = 0; // Reset score
+                li.firstChild.textContent = `${player.name}: ${player.score}`; // Update text
             };
 
-            li.appendChild(resetButton);
-            playersList.appendChild(li);
+            li.appendChild(resetButton); // Add button to list item
+            playersList.appendChild(li); // Add list item to players list
         }
 
-        // Highlight the active player in the scoreboard
+        /*******************************
+         * Function: highlightActivePlayer
+         * Highlights the active player in the scoreboard.
+         *******************************/
         function highlightActivePlayer() {
             // Remove highlight from all players
             playersList.querySelectorAll('li').forEach(li => {
@@ -151,36 +188,41 @@
                 activeLi.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
             }
 
-            // Update active player indicator
+            // Update active player display
             activePlayerDiv.textContent = `Active Player: ${activePlayer.name}`;
         }
 
-        // Initialization when the page loads
+        /*******************************
+         * Event: window.onload
+         * Initializes WebGL and other settings when the page loads.
+         *******************************/
         window.onload = function() {
-            canvas = document.getElementById("myCanvas");
-            glContext = canvas.getContext("webgl2");
+            canvas = document.getElementById("myCanvas"); // Get canvas
+            glContext = canvas.getContext("webgl2"); // Get WebGL2 context
             if (!glContext) {
-                alert("WebGL 2.0 is not available.");
+                alert("WebGL 2.0 is not available."); // Alert if not supported
                 return;
             }
 
-            glContext.enable(glContext.DEPTH_TEST); // Enable depth testing for 3D rendering
+            glContext.enable(glContext.DEPTH_TEST); // Enable depth testing
             glContext.clearColor(0.1, 0.1, 0.1, 1.0); // Set clear color
 
-            initializeShaders();
-            initializeBuffers();
-            loadTextures();
-            initializeMatrices();
-            initializeLighting();
-            initializeEvents();
+            initializeShaders(); // Setup shaders
+            initializeBuffers(); // Setup buffers
+            loadTextures(); // Load textures
+            initializeMatrices(); // Setup matrices
+            initializeLighting(); // Setup lighting
+            initializeEvents(); // Setup event listeners
 
-            requestAnimationFrame(render); // Start the render loop
+            requestAnimationFrame(render); // Start rendering
         };
 
-        // Shader Initialization:
-        // - Vertex Shader: Calculates positions, rotations, and normals of the object
-        // - Fragment Shader: Calculates colors and lighting effects, including diffuse and specular components
+        /*******************************
+         * Function: initializeShaders
+         * Compiles and links the shaders.
+         *******************************/
         function initializeShaders() {
+            // Vertex Shader
             const vsSource = `#version 300 es
             in vec3 aPos;
             in vec3 aNormal;
@@ -214,16 +256,17 @@
                     0.0, 0.0, 0.0, 1.0
                 );
 
-                mat4 rotation = rotationY * rotationX;
-                mat4 model = uTranslation * rotation;
+                mat4 rotation = rotationY * rotationX; // Combine rotations
+                mat4 model = uTranslation * rotation; // Apply translation
 
-                gl_Position = uProjection * model * vec4(aPos, 1.0);
-                FragPos = vec3(model * vec4(aPos, 1.0));
-                Normal = mat3(transpose(inverse(model))) * aNormal;
-                TexCoord = aTexCoord;
-                FaceID = aFaceID;
+                gl_Position = uProjection * model * vec4(aPos, 1.0); // Final position
+                FragPos = vec3(model * vec4(aPos, 1.0)); // Fragment position
+                Normal = mat3(transpose(inverse(model))) * aNormal; // Normal transformation
+                TexCoord = aTexCoord; // Pass texture coordinates
+                FaceID = aFaceID; // Pass FaceID
             }`;
 
+            // Fragment Shader
             const fsSource = `#version 300 es
             precision mediump float;
 
@@ -249,7 +292,7 @@
             void main() {
                 vec4 texColor;
 
-                // Determine which face we are rendering based on FaceID
+                // Select texture based on FaceID
                 if (FaceID < 1.5) {
                     texColor = texture(uTexture1, TexCoord);
                 } else if (FaceID < 2.5) {
@@ -265,22 +308,24 @@
                 }
 
                 // Lighting calculations
-                vec3 norm = normalize(Normal);
-                vec3 lightDir = normalize(uLightPos - FragPos);
-                float diff = max(dot(norm, lightDir), 0.0);
+                vec3 norm = normalize(Normal); // Normalize normal
+                vec3 lightDir = normalize(uLightPos - FragPos); // Light direction
+                float diff = max(dot(norm, lightDir), 0.0); // Diffuse
 
-                vec3 viewDir = normalize(-FragPos);
-                vec3 reflectDir = reflect(-lightDir, norm);
-                float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
+                vec3 viewDir = normalize(-FragPos); // View direction
+                vec3 reflectDir = reflect(-lightDir, norm); // Reflection direction
+                float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0); // Specular
 
-                vec3 ambient = uAmbient * vec3(texColor);
-                vec3 diffuse = uDiffuse * diff * vec3(texColor);
-                vec3 specular = uSpecular * spec * vec3(1.0);
+                // Combine lighting components
+                vec3 ambientComponent = uAmbient * vec3(texColor);
+                vec3 diffuseComponent = uDiffuse * diff * vec3(texColor);
+                vec3 specularComponent = uSpecular * spec * vec3(1.0);
 
-                vec3 finalColor = ambient + diffuse + specular;
-                FragColor = vec4(finalColor, texColor.a);
+                vec3 finalColor = ambientComponent + diffuseComponent + specularComponent;
+                FragColor = vec4(finalColor, texColor.a); // Final color
             }`;
 
+            // Compile shaders
             const vertexShader = compileShader(glContext.VERTEX_SHADER, vsSource);
             const fragmentShader = compileShader(glContext.FRAGMENT_SHADER, fsSource);
 
@@ -289,6 +334,7 @@
                 return;
             }
 
+            // Create and link shader program
             program = glContext.createProgram();
             glContext.attachShader(program, vertexShader);
             glContext.attachShader(program, fragmentShader);
@@ -299,119 +345,126 @@
                 return;
             }
 
-            glContext.useProgram(program);
+            glContext.useProgram(program); // Use the shader program
 
-            // Retrieve and assign uniform locations globally
+            // Get uniform locations
             uProjection = glContext.getUniformLocation(program, "uProjection");
             uTranslation = glContext.getUniformLocation(program, "uTranslation");
-            uRotationX_loc = glContext.getUniformLocation(program, "uRotationX"); // Rotation around X-axis
-            uRotationY_loc = glContext.getUniformLocation(program, "uRotationY"); // Rotation around Y-axis
+            uRotationX_loc = glContext.getUniformLocation(program, "uRotationX");
+            uRotationY_loc = glContext.getUniformLocation(program, "uRotationY");
         }
 
-        // Compiles a shader of the given type with the provided source
+        /*******************************
+         * Function: compileShader
+         * Compiles a shader of given type with source code.
+         *******************************/
         function compileShader(type, source) {
-            const shader = glContext.createShader(type);
-            glContext.shaderSource(shader, source);
-            glContext.compileShader(shader);
+            const shader = glContext.createShader(type); // Create shader
+            glContext.shaderSource(shader, source); // Set source
+            glContext.compileShader(shader); // Compile
+
             if (!glContext.getShaderParameter(shader, glContext.COMPILE_STATUS)) {
                 console.error("Shader compilation failed:", glContext.getShaderInfoLog(shader));
                 glContext.deleteShader(shader);
                 return null;
             }
-            return shader;
+            return shader; // Return compiled shader
         }
 
-        // Buffer Initialization
+        /*******************************
+         * Function: initializeBuffers
+         * Sets up the vertex data and buffers for the cube.
+         *******************************/
         function initializeBuffers() {
-            vao = glContext.createVertexArray();
-            glContext.bindVertexArray(vao);
+            vao = glContext.createVertexArray(); // Create VAO
+            glContext.bindVertexArray(vao); // Bind VAO
 
-            // Define the vertices of the cube with positions, normals, TexCoords, and FaceID
+            // Define cube vertices with position, normal, texCoord, and FaceID
             const vertices = new Float32Array([
-                // Positions         // Normals          // TexCoords // FaceID
-                // Front face (Face 1: Red) FaceID = 1
-                1,  1,  1,          0,  0,  1,           1, 1,        1,
-                1, -1,  1,          0,  0,  1,           1, 0,        1,
-               -1, -1,  1,          0,  0,  1,           0, 0,        1,
-               -1, -1,  1,          0,  0,  1,           0, 0,        1,
-               -1,  1,  1,          0,  0,  1,           0, 1,        1,
-                1,  1,  1,          0,  0,  1,           1, 1,        1,
+                // Front face (Face 1)
+                1,  1,  1,  0,  0,  1,  1, 1, 1,
+                1, -1,  1,  0,  0,  1,  1, 0, 1,
+               -1, -1,  1,  0,  0,  1,  0, 0, 1,
+               -1, -1,  1,  0,  0,  1,  0, 0, 1,
+               -1,  1,  1,  0,  0,  1,  0, 1, 1,
+                1,  1,  1,  0,  0,  1,  1, 1, 1,
 
-                // Back face (Face 2: Green) FaceID = 2
-                1,  1, -1,          0,  0, -1,           1, 1,        2,
-                1, -1, -1,          0,  0, -1,           1, 0,        2,
-               -1, -1, -1,          0,  0, -1,           0, 0,        2,
-               -1, -1, -1,          0,  0, -1,           0, 0,        2,
-               -1,  1, -1,          0,  0, -1,           0, 1,        2,
-                1,  1, -1,          0,  0, -1,           1, 1,        2,
+                // Back face (Face 2)
+                1,  1, -1,  0,  0, -1,  1, 1, 2,
+                1, -1, -1,  0,  0, -1,  1, 0, 2,
+               -1, -1, -1,  0,  0, -1,  0, 0, 2,
+               -1, -1, -1,  0,  0, -1,  0, 0, 2,
+               -1,  1, -1,  0,  0, -1,  0, 1, 2,
+                1,  1, -1,  0,  0, -1,  1, 1, 2,
 
-                // Right face (Face 3: Blue) FaceID = 3
-                1,  1,  1,          1,  0,  0,           1, 1,        3,
-                1, -1,  1,          1,  0,  0,           1, 0,        3,
-                1, -1, -1,          1,  0,  0,           0, 0,        3,
-                1, -1, -1,          1,  0,  0,           0, 0,        3,
-                1,  1, -1,          1,  0,  0,           0, 1,        3,
-                1,  1,  1,          1,  0,  0,           1, 1,        3,
+                // Right face (Face 3)
+                1,  1,  1,  1,  0,  0,  1, 1, 3,
+                1, -1,  1,  1,  0,  0,  1, 0, 3,
+                1, -1, -1,  1,  0,  0,  0, 0, 3,
+                1, -1, -1,  1,  0,  0,  0, 0, 3,
+                1,  1, -1,  1,  0,  0,  0, 1, 3,
+                1,  1,  1,  1,  0,  0,  1, 1, 3,
 
-                // Left face (Face 4: Yellow) FaceID = 4
-               -1,  1,  1,         -1,  0,  0,           1, 1,        4,
-               -1, -1,  1,         -1,  0,  0,           1, 0,        4,
-               -1, -1, -1,         -1,  0,  0,           0, 0,        4,
-               -1, -1, -1,         -1,  0,  0,           0, 0,        4,
-               -1,  1, -1,         -1,  0,  0,           0, 1,        4,
-               -1,  1,  1,         -1,  0,  0,           1, 1,        4,
+                // Left face (Face 4)
+               -1,  1,  1, -1,  0,  0,  1, 1, 4,
+               -1, -1,  1, -1,  0,  0,  1, 0, 4,
+               -1, -1, -1, -1,  0,  0,  0, 0, 4,
+               -1, -1, -1, -1,  0,  0,  0, 0, 4,
+               -1,  1, -1, -1,  0,  0,  0, 1, 4,
+               -1,  1,  1, -1,  0,  0,  1, 1, 4,
 
-                // Top face (Face 5: Purple) FaceID = 5
-                1,  1,  1,          0,  1,  0,           1, 1,        5,
-               -1,  1,  1,          0,  1,  0,           1, 0,        5,
-               -1,  1, -1,          0,  1,  0,           0, 0,        5,
-               -1,  1, -1,          0,  1,  0,           0, 0,        5,
-                1,  1, -1,          0,  1,  0,           0, 1,        5,
-                1,  1,  1,          0,  1,  0,           1, 1,        5,
+                // Top face (Face 5)
+                1,  1,  1,  0,  1,  0,  1, 1, 5,
+               -1,  1,  1,  0,  1,  0,  1, 0, 5,
+               -1,  1, -1,  0,  1,  0,  0, 0, 5,
+               -1,  1, -1,  0,  1,  0,  0, 0, 5,
+                1,  1, -1,  0,  1,  0,  0, 1, 5,
+                1,  1,  1,  0,  1,  0,  1, 1, 5,
 
-                // Bottom face (Face 6: Orange) FaceID = 6
-                1, -1,  1,          0, -1,  0,           1, 1,        6,
-               -1, -1,  1,          0, -1,  0,           1, 0,        6,
-               -1, -1, -1,          0, -1,  0,           0, 0,        6,
-               -1, -1, -1,          0, -1,  0,           0, 0,        6,
-                1, -1, -1,          0, -1,  0,           0, 1,        6,
-                1, -1,  1,          0, -1,  0,           1, 1,        6,
+                // Bottom face (Face 6)
+                1, -1,  1,  0, -1,  0,  1, 1, 6,
+               -1, -1,  1,  0, -1,  0,  1, 0, 6,
+               -1, -1, -1,  0, -1,  0,  0, 0, 6,
+               -1, -1, -1,  0, -1,  0,  0, 0, 6,
+                1, -1, -1,  0, -1,  0,  0, 1, 6,
+                1, -1,  1,  0, -1,  0,  1, 1, 6,
             ]);
 
+            // Create and bind buffer
             const buffer = glContext.createBuffer();
             glContext.bindBuffer(glContext.ARRAY_BUFFER, buffer);
             glContext.bufferData(glContext.ARRAY_BUFFER, vertices, glContext.STATIC_DRAW);
 
-            // Position attribute
+            // Get attribute locations
             const aPos = glContext.getAttribLocation(program, "aPos");
             glContext.enableVertexAttribArray(aPos);
-            glContext.vertexAttribPointer(aPos, 3, glContext.FLOAT, false, 36, 0); // 9 floats * 4 bytes = 36 bytes
+            glContext.vertexAttribPointer(aPos, 3, glContext.FLOAT, false, 36, 0);
 
-            // Normal attribute
             const aNormal = glContext.getAttribLocation(program, "aNormal");
             glContext.enableVertexAttribArray(aNormal);
-            glContext.vertexAttribPointer(aNormal, 3, glContext.FLOAT, false, 36, 12); // 3 floats *4 = 12
+            glContext.vertexAttribPointer(aNormal, 3, glContext.FLOAT, false, 36, 12);
 
-            // TexCoord attribute
             const aTexCoord = glContext.getAttribLocation(program, "aTexCoord");
             glContext.enableVertexAttribArray(aTexCoord);
-            glContext.vertexAttribPointer(aTexCoord, 2, glContext.FLOAT, false, 36, 24); // 2 floats *4 = 24
+            glContext.vertexAttribPointer(aTexCoord, 2, glContext.FLOAT, false, 36, 24);
 
-            // FaceID attribute
             const aFaceID = glContext.getAttribLocation(program, "aFaceID");
             glContext.enableVertexAttribArray(aFaceID);
-            glContext.vertexAttribPointer(aFaceID, 1, glContext.FLOAT, false, 36, 32); // 1 float *4 = 32
+            glContext.vertexAttribPointer(aFaceID, 1, glContext.FLOAT, false, 36, 32);
         }
 
-        // Load Textures for each die face
+        /*******************************
+         * Function: loadTextures
+         * Loads textures for each face of the die.
+         *******************************/
         function loadTextures() {
             const textureUnits = ["uTexture1", "uTexture2", "uTexture3", "uTexture4", "uTexture5", "uTexture6"];
 
             for (let i = 0; i < textureData.length; i++) {
-                const texture = glContext.createTexture();
-                glContext.bindTexture(glContext.TEXTURE_2D, texture);
+                const texture = glContext.createTexture(); // Create texture
+                glContext.bindTexture(glContext.TEXTURE_2D, texture); // Bind texture
 
-                // Placeholder 1x1 pixel (white) while the actual texture loads
+                // Placeholder pixel
                 const level = 0;
                 const internalFormat = glContext.RGBA;
                 const width = 1;
@@ -422,7 +475,7 @@
                 const pixel = new Uint8Array([255, 255, 255, 255]); // White pixel
                 glContext.texImage2D(glContext.TEXTURE_2D, level, internalFormat, width, height, border, srcFormat, srcType, pixel);
 
-                // Load the actual image
+                // Load actual image
                 const image = new Image();
                 image.src = textureData[i];
                 image.onload = function() {
@@ -434,70 +487,81 @@
                     console.error(`Error loading texture ${i + 1}`);
                 };
 
-                // Texture parameters for wrapping and filtering
+                // Set texture parameters
                 glContext.texParameteri(glContext.TEXTURE_2D, glContext.TEXTURE_WRAP_S, glContext.CLAMP_TO_EDGE);
                 glContext.texParameteri(glContext.TEXTURE_2D, glContext.TEXTURE_WRAP_T, glContext.CLAMP_TO_EDGE);
                 glContext.texParameteri(glContext.TEXTURE_2D, glContext.TEXTURE_MIN_FILTER, glContext.LINEAR_MIPMAP_LINEAR);
                 glContext.texParameteri(glContext.TEXTURE_2D, glContext.TEXTURE_MAG_FILTER, glContext.LINEAR);
 
-                // Activate the correct texture unit and assign the texture
+                // Bind texture to texture unit
                 glContext.activeTexture(glContext.TEXTURE0 + i);
                 glContext.bindTexture(glContext.TEXTURE_2D, texture);
                 glContext.uniform1i(glContext.getUniformLocation(program, textureUnits[i]), i);
-                textures.push(texture);
+
+                textures.push(texture); // Store texture
             }
         }
 
-        // Matrix Initialization for projection and translation
+        /*******************************
+         * Function: initializeMatrices
+         * Sets up projection and translation matrices.
+         *******************************/
         function initializeMatrices() {
-            // Projection matrix (perspective)
+            // Projection matrix
             uProjection = glContext.getUniformLocation(program, "uProjection");
-            const fov = 45 * Math.PI / 180; // 45 degrees in radians
-            const aspect = glContext.canvas.clientWidth / glContext.canvas.clientHeight;
+            const fov = 45 * Math.PI / 180; // 45 degrees
+            const aspect = glContext.canvas.clientWidth / glContext.canvas.clientHeight; // Aspect ratio
             const zNear = 0.1;
             const zFar = 100.0;
             const projectionMatrix = perspective(fov, aspect, zNear, zFar);
-            glContext.uniformMatrix4fv(uProjection, false, projectionMatrix);
+            glContext.uniformMatrix4fv(uProjection, false, projectionMatrix); // Send to shader
 
-            // Translation matrix to position the die within the view
+            // Translation matrix
             uTranslation = glContext.getUniformLocation(program, "uTranslation");
-            const translationMatrix = translate(0, 0, -6); // Move the die 6 units into the screen
-            glContext.uniformMatrix4fv(uTranslation, false, translationMatrix);
+            const translationMatrix = translate(0, 0, -6); // Move back 6 units
+            glContext.uniformMatrix4fv(uTranslation, false, translationMatrix); // Send to shader
         }
 
-        // Lighting Initialization
+        /*******************************
+         * Function: initializeLighting
+         * Sets up lighting parameters.
+         *******************************/
         function initializeLighting() {
             uLightPos = glContext.getUniformLocation(program, "uLightPos");
             uAmbient = glContext.getUniformLocation(program, "uAmbient");
             uDiffuse = glContext.getUniformLocation(program, "uDiffuse");
             uSpecular = glContext.getUniformLocation(program, "uSpecular");
 
-            // Initial lighting values
-            glContext.uniform3fv(uLightPos, [5.0, 5.0, 5.0]); // Position of the light source
-            glContext.uniform1f(uAmbient, 0.3); // Ambient lighting intensity
-            glContext.uniform1f(uDiffuse, 0.7); // Diffuse lighting intensity
-            glContext.uniform1f(uSpecular, 1.0); // Specular lighting intensity
+            // Set initial lighting values
+            glContext.uniform3fv(uLightPos, [5.0, 5.0, 5.0]); // Light position
+            glContext.uniform1f(uAmbient, 0.3); // Ambient intensity
+            glContext.uniform1f(uDiffuse, 0.7); // Diffuse intensity
+            glContext.uniform1f(uSpecular, 1.0); // Specular intensity
         }
 
-        // Event Initialization for user interactions
+        /*******************************
+         * Function: initializeEvents
+         * Sets up event listeners for user interactions.
+         *******************************/
         function initializeEvents() {
-            // Spacebar to roll the die
+            // Listen for spacebar to roll the die
             window.addEventListener("keydown", function(event) {
-                if (event.code === "Space" && !isRolling) {
-                    rollDie();
+                if (event.code === "Space" && !isRolling) { // Check if spacebar and not already rolling
+                    rollDie(); // Roll the die
                 }
             });
 
-            // Mouse move to adjust the light position dynamically
+            // Move light with mouse
             canvas.addEventListener("mousemove", function(event) {
-                const rect = canvas.getBoundingClientRect();
-                const x = ((event.clientX - rect.left) / canvas.width) * 10 - 5; // Map to range [-5, +5]
-                const y = ((event.clientY - rect.top) / canvas.height) * 10 - 5; // Map to range [-5, +5]
+                const rect = canvas.getBoundingClientRect(); // Get canvas position
+                const x = ((event.clientX - rect.left) / canvas.width) * 10 - 5; // Map X to [-5, 5]
+                const y = ((event.clientY - rect.top) / canvas.height) * 10 - 5; // Map Y to [-5, 5]
                 glContext.uniform3fv(uLightPos, [x, y, 5.0]); // Update light position
             });
 
-            // Keyboard controls for adjusting lighting parameters
+            // Adjust lighting with keys
             window.addEventListener("keydown", function(event) {
+                // Get current lighting values
                 let ambient = glContext.getUniform(program, uAmbient);
                 let diffuse = glContext.getUniform(program, uDiffuse);
                 let specular = glContext.getUniform(program, uSpecular);
@@ -530,129 +594,137 @@
                 }
             });
 
-            // Form submission to add new players
+            // Handle adding new players
             playerForm.addEventListener("submit", function(event) {
-                event.preventDefault();
-                const playerNameInput = document.getElementById("playerName");
-                const name = playerNameInput.value.trim();
-                if (name === "") return;
+                event.preventDefault(); // Prevent form from submitting
+                const playerNameInput = document.getElementById("playerName"); // Get input
+                const name = playerNameInput.value.trim(); // Get name
+                if (name === "") return; // Do nothing if empty
 
-                // Check if the player already exists
+                // Check for duplicate names
                 if (players.some(player => player.name === name)) {
-                    alert("Speler bestaat al!");
+                    alert("Player already exists!"); // Alert if duplicate
                     return;
                 }
 
-                // Add new player to the list
+                // Add new player
                 const player = { name: name, score: 0 };
-                players.push(player);
-                addPlayerToList(player);
-                playerNameInput.value = "";
+                players.push(player); // Add to array
+                addPlayerToList(player); // Add to UI
+                playerNameInput.value = ""; // Clear input
 
-                // If first player, set as active
+                // If first player, highlight as active
                 if (players.length === 1) {
                     highlightActivePlayer();
                 }
             });
         }
 
-        // Render Function: Called every frame to render the scene
+        /*******************************
+         * Function: render
+         * Main render loop to draw the scene.
+         *******************************/
         function render(currentTime) {
-            const deltaTime = currentTime - lastTime;
-            lastTime = currentTime;
+            const deltaTime = currentTime - lastTime; // Time since last frame
+            lastTime = currentTime; // Update lastTime
 
-            glContext.clear(glContext.COLOR_BUFFER_BIT | glContext.DEPTH_BUFFER_BIT); // Clear the canvas
+            glContext.clear(glContext.COLOR_BUFFER_BIT | glContext.DEPTH_BUFFER_BIT); // Clear screen
 
-            // Automatic rotation if not rolling
+            // Rotate automatically if not rolling
             if (!isRolling) {
-                currentRotation.x += ROTATION_SPEED;
-                currentRotation.y += ROTATION_SPEED;
+                currentRotation.x += ROTATION_SPEED; // Rotate X
+                currentRotation.y += ROTATION_SPEED; // Rotate Y
             }
 
-            // Update rotation uniforms using global uniform locations
+            // Update rotation uniforms
             glContext.uniform1f(uRotationX_loc, currentRotation.x);
             glContext.uniform1f(uRotationY_loc, currentRotation.y);
 
-            // Bind all textures before drawing
+            // Bind textures
             for (let i = 0; i < textures.length; i++) {
                 glContext.activeTexture(glContext.TEXTURE0 + i);
                 glContext.bindTexture(glContext.TEXTURE_2D, textures[i]);
             }
 
-            // Render the cube (die)
-            glContext.bindVertexArray(vao);
-            glContext.drawArrays(glContext.TRIANGLES, 0, 36);
+            glContext.bindVertexArray(vao); // Bind VAO
+            glContext.drawArrays(glContext.TRIANGLES, 0, 36); // Draw cube
 
-            requestAnimationFrame(render); // Continue the render loop
+            requestAnimationFrame(render); // Continue loop
         }
 
-        // Die Rolling Function: Handles the animation and score updating when the die is rolled
+        /*******************************
+         * Function: rollDie
+         * Handles the die rolling and score updating.
+         *******************************/
         function rollDie() {
-            if (players.length === 0) {
-                alert("Voeg eerst een speler toe!"); // Alert if no players are present
+            if (players.length === 0) { // Check if there are players
+                alert("Add a player first!"); // Alert if no players
                 return;
             }
 
-            isRolling = true;
+            isRolling = true; // Set rolling flag
 
-            // Generate a random number between 1 and 6 to simulate die roll
+            // Generate random number between 1 and 6
             const randomNumber = Math.floor(Math.random() * 6) + 1;
-            console.log(`Rolresultaat: ${randomNumber}`);
+            console.log(`Roll result: ${randomNumber}`); // Log result
 
-            // Update the active player's score
+            // Update active player's score
             const activePlayer = players[activePlayerIndex];
-            activePlayer.score += randomNumber;
+            activePlayer.score += randomNumber; // Add score
             const playerLi = document.getElementById(`player-${activePlayer.name}`);
             if (playerLi) {
-                playerLi.firstChild.textContent = `${activePlayer.name}: ${activePlayer.score}`;
+                playerLi.firstChild.textContent = `${activePlayer.name}: ${activePlayer.score}`; // Update UI
             }
 
-            // Define target rotations for each face to align the correct face upwards
+            // Set target rotation based on roll
             const rotations = {
-                1: { x: 0,               y: 0 },               // Front
-                2: { x: 0,               y: Math.PI },       // Back
-                3: { x: 0,               y: -Math.PI / 2 },  // Right
-                4: { x: 0,               y:  Math.PI / 2 },  // Left
-                5: { x: -Math.PI / 2,    y: 0 },               // Top
-                6: { x:  Math.PI / 2,    y: 0 }                // Bottom
+                1: { x: 0,               y: 0 },
+                2: { x: 0,               y: Math.PI },
+                3: { x: 0,               y: -Math.PI / 2 },
+                4: { x: 0,               y:  Math.PI / 2 },
+                5: { x: -Math.PI / 2,    y: 0 },
+                6: { x:  Math.PI / 2,    y: 0 }
             };
 
-            const target = rotations[randomNumber];
+            const target = rotations[randomNumber]; // Get rotation for rolled number
 
-            // Add extra rotations for realism, making the die spin multiple times before stopping
-            const extraRotations = Math.floor(Math.random() * 4) + 2; // 2 to 5 extra rotations
+            // Add extra spins for realism
+            const extraRotations = Math.floor(Math.random() * 4) + 2; // 2 to 5 extra spins
             targetRotation.x = target.x + (extraRotations * 2 * Math.PI);
             targetRotation.y = target.y + (extraRotations * 2 * Math.PI);
 
-            // Animation parameters
-            const duration = 2000; // 2 seconds for the roll animation
-            const startRotation = { ...currentRotation };
+            // Animation settings
+            const duration = 2000; // 2 seconds
+            const startRotation = { ...currentRotation }; // Starting rotation
             const deltaRotation = { 
                 x: targetRotation.x - startRotation.x,
                 y: targetRotation.y - startRotation.y
             };
-            const startTime = performance.now();
+            const startTime = performance.now(); // Start time
 
-            // Easing function (easeOutCubic) for smooth deceleration
+            // Easing function for smooth stop
             function easeOutCubic(t) {
                 return 1 - Math.pow(1 - t, 3);
             }
 
-            // Animation function with easing applied
+            /*******************************
+             * Function: animate
+             * Animates the die rotation.
+             *******************************/
             function animate(time) {
-                const elapsed = time - startTime;
-                const t = Math.min(elapsed / duration, 1); // Clamp t to [0,1]
-                const easedT = easeOutCubic(t);
+                const elapsed = time - startTime; // Time elapsed
+                const t = Math.min(elapsed / duration, 1); // Normalized time
+                const easedT = easeOutCubic(t); // Apply easing
 
-                // Update current rotation based on easing
+                // Update rotation based on easing
                 currentRotation.x = startRotation.x + deltaRotation.x * easedT;
                 currentRotation.y = startRotation.y + deltaRotation.y * easedT;
 
-                // Update rotation uniforms
+                // Update shader uniforms
                 glContext.uniform1f(uRotationX_loc, currentRotation.x);
                 glContext.uniform1f(uRotationY_loc, currentRotation.y);
 
-                // Clear and redraw the scene with updated rotation
+                // Clear and redraw
                 glContext.clear(glContext.COLOR_BUFFER_BIT | glContext.DEPTH_BUFFER_BIT);
                 for (let i = 0; i < textures.length; i++) {
                     glContext.activeTexture(glContext.TEXTURE0 + i);
@@ -661,10 +733,10 @@
                 glContext.bindVertexArray(vao);
                 glContext.drawArrays(glContext.TRIANGLES, 0, 36);
 
-                if (t < 1) {
-                    requestAnimationFrame(animate); // Continue animation
+                if (t < 1) { // Continue animation
+                    requestAnimationFrame(animate);
                 } else {
-                    // Snap to the exact target rotation to ensure the correct face is up
+                    // Snap to exact target rotation
                     currentRotation.x = target.x + (extraRotations * 2 * Math.PI);
                     currentRotation.y = target.y + (extraRotations * 2 * Math.PI);
                     glContext.uniform1f(uRotationX_loc, currentRotation.x);
@@ -677,17 +749,19 @@
                     glContext.bindVertexArray(vao);
                     glContext.drawArrays(glContext.TRIANGLES, 0, 36);
 
-                    isRolling = false; // Roll animation finished
-                    // Switch to the next player in the list
+                    isRolling = false; // Reset rolling flag
+                    // Move to next player
                     activePlayerIndex = (activePlayerIndex + 1) % players.length;
-                    highlightActivePlayer();
+                    highlightActivePlayer(); // Update UI
                 }
             }
 
-            requestAnimationFrame(animate); // Start the roll animation
+            requestAnimationFrame(animate); // Start animation
         }
 
-        // Matrix Helper Functions
+        /*******************************
+         * Matrix Helper Functions
+         *******************************/
 
         /**
          * Creates a perspective projection matrix.
@@ -695,7 +769,7 @@
          * @param {number} aspect - Aspect ratio.
          * @param {number} near - Near clipping plane.
          * @param {number} far - Far clipping plane.
-         * @returns {Float32Array} - The perspective projection matrix.
+         * @returns {Float32Array} - The perspective matrix.
          */
         function perspective(fov, aspect, near, far) {
             const f = 1.0 / Math.tan(fov / 2);
@@ -717,14 +791,14 @@
             out[13] = 0;
             out[14] = (2 * far * near) * nf;
             out[15] = 0;
-            return out;
+            return out; // Return the matrix
         }
 
         /**
          * Creates a translation matrix.
-         * @param {number} x - Translation along the X-axis.
-         * @param {number} y - Translation along the Y-axis.
-         * @param {number} z - Translation along the Z-axis.
+         * @param {number} x - Translation along X-axis.
+         * @param {number} y - Translation along Y-axis.
+         * @param {number} z - Translation along Z-axis.
          * @returns {Float32Array} - The translation matrix.
          */
         function translate(x, y, z) {
@@ -745,7 +819,7 @@
             out[13] = y;
             out[14] = z;
             out[15] = 1;
-            return out;
+            return out; // Return the matrix
         }
     </script>
 </body>
